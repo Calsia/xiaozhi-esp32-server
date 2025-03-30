@@ -568,6 +568,25 @@ class ConnectionHandler:
             future = self.executor.submit(self.speak_and_play, text, text_index)
             self.tts_queue.put(future)
             self.dialogue.put(Message(role="assistant", content=text))
+    def handle_function_result_cnn(self, text):
+        # 仅仅处理需要进一步被处理的信息
+        try:
+            response_message = []
+            if text is not None and len(text) > 0:
+                tmp_dialogue_message = self.dialogue.get_llm_dialogue_with_memory().copy()
+                tmp_dialogue_message.append({'role': 'tool', 'content': text})
+                llm_responses = self.intent.llm.response(
+                    self.session_id,
+                    tmp_dialogue_message
+                )
+                for content in llm_responses:
+                    if content is not None and len(content) > 0:
+                        response_message.append(content)
+                # 处理最后剩余的文本
+            return "".join(response_message)
+        except Exception as e:
+            self.logger.bind(tag=TAG).error(f"MCP工具调用错误: {e}")
+            return None
 
     def _tts_priority_thread(self):
         while not self.stop_event.is_set():

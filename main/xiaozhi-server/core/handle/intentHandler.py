@@ -5,6 +5,7 @@ from core.handle.sendAudioHandle import send_stt_message
 from core.handle.helloHandle import checkWakeupWords
 from core.utils.util import remove_punctuation_and_length
 from core.utils.dialogue import Message
+from plugins_func.register import Action, ActionResponse
 from loguru import logger
 
 TAG = __name__
@@ -97,6 +98,8 @@ async def process_intent_result(conn, intent_result, original_text):
                     if text is None:
                         text = result.result
                     if text is not None:
+                        if result.action == Action.REQLLM:  # 调用函数后再请求llm生成回复
+                            text = conn.handle_function_result_cnn(text)
                         text_index = conn.tts_last_text_index + 1 if hasattr(conn, 'tts_last_text_index') else 0
                         conn.recode_first_last_text(text, text_index)
                         future = conn.executor.submit(conn.speak_and_play, text, text_index)

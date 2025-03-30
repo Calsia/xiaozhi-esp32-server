@@ -21,7 +21,6 @@ import xiaozhi.common.utils.Result;
 import xiaozhi.modules.model.dto.ModelConfigBodyDTO;
 import xiaozhi.modules.model.dto.ModelConfigDTO;
 import xiaozhi.modules.model.dto.ModelProviderDTO;
-import xiaozhi.modules.model.dto.ModelProviderFieldDTO;
 import xiaozhi.modules.model.service.ModelConfigService;
 import xiaozhi.modules.model.service.ModelProviderService;
 
@@ -55,20 +54,19 @@ public class ModelController {
     @GetMapping("/{modelType}/{provideCode}/fields")
     @Operation(summary = "获取模型供应器字段")
     @RequiresPermissions("sys:role:superAdmin")
-    public Result<List<ModelProviderFieldDTO>> getModelProviderFields(@PathVariable String modelType,
+    public Result<List<String>> getModelProviderFields(@PathVariable String modelType,
             @PathVariable String provideCode) {
-        List<ModelProviderFieldDTO> fieldList = modelProviderService.getFieldList(modelType, provideCode);
-        return new Result<List<ModelProviderFieldDTO>>().ok(fieldList);
+        List<String> fieldList = modelProviderService.getFieldList(modelType, provideCode);
+        return new Result<List<String>>().ok(fieldList);
     }
 
     @GetMapping("/models/list")
     @Operation(summary = "获取模型配置列表")
     @RequiresPermissions("sys:role:superAdmin")
-    public Result<PageData<ModelConfigDTO>> getModelConfigList(
-            @RequestParam(required = true) String modelType,
+    public Result<PageData<ModelConfigDTO>> getModelConfigList(@RequestParam String modelType,
             @RequestParam(required = false) String modelName,
-            @RequestParam(required = true, defaultValue = "0") String page,
-            @RequestParam(required = true, defaultValue = "10") String limit) {
+            @RequestParam(required = false, defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "10") Integer limit) {
         PageData<ModelConfigDTO> pageList = modelConfigService.getPageList(modelType, modelName, page, limit);
         return new Result<PageData<ModelConfigDTO>>().ok(pageList);
     }
@@ -103,13 +101,13 @@ public class ModelController {
         return new Result<>();
     }
 
-    @GetMapping("/models/{modelId}/voices")
+    @GetMapping("/models/{modelName}/voices")
     @Operation(summary = "获取模型音色")
     @RequiresPermissions("sys:role:normal")
-    public Result<List<String>> getVoiceList(@PathVariable String modelId,
+    public Result<List<String>> getVoiceList(@PathVariable String modelName,
             @RequestParam(required = false) String voiceName) {
 
-        List<String> voiceList = modelConfigService.getVoiceList(modelId, voiceName);
+        List<String> voiceList = modelConfigService.getVoiceList(modelName, voiceName);
         return new Result<List<String>>().ok(voiceList);
     }
 }
