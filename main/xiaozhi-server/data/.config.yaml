@@ -267,6 +267,7 @@ LLM:
     # bot_id和user_id的内容写在引号之内
     bot_id: "7486489889299677196"
     user_id: "abc"####"你的user_id"
+    app_id: "7498295252122419239"
     workflow_id: "7489080616107425818"
     personal_access_token: "pat_gwv0CMVOaEOJugQBJLuLxc1rSmQcpgJZCMeHc4o1NtHmeSYWuCwSbNcNBalmwxEk"
   LMStudioLLM:

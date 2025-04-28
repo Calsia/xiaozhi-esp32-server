@@ -242,10 +242,15 @@ class ConnectionHandler:
             if m.role == "system":
                 m.content = prompt
 
-    def change_system_module(self, module_id):
+    def change_system_module(self, module_info):
         from core.providers.llm.coze.coze_work_flow import LLMProvider as cwf
-        self.module_id = module_id
-        self.cwf = cwf(self.config["LLM"]["CozeLLM"])
+        self.module_id = module_info[0]
+        self.cwf = cwf(self.config["LLM"]["CozeLLM"], module_info[1], module_info[4])
+        if module_info[2] is not "":
+            tt=self.cwf.response("", [{"role": "user", "content": module_info[2]}])
+            for t in tt:
+                print(t)
+
 
     async def _check_and_broadcast_auth_code(self):
         """检查设备绑定状态并广播认证码"""
@@ -374,19 +379,14 @@ class ConnectionHandler:
             # self.logger.bind(tag=TAG).info(f"对话记录: {self.dialogue.get_llm_dialogue_with_memory(memory_str)}")
 
             # 使用支持functions的streaming接口
-            mark_module_id = self.module_id
             llm_responses = self.llm.response_with_functions(
                 self.session_id,
                 self.dialogue.get_llm_dialogue_with_memory(memory_str),
                 functions=functions
             )
-            if self.module_id != 0:  # and self.module_id == mark_module_id:
-                llm_responses = self.cwf.response(self.dialogue.get_llm_dialogue_with_memory(memory_str))
-                pass
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"LLM 处理出错 {query}: {e}")
             return None
-
         self.llm_finish_task = False
         text_index = 0
 
@@ -413,7 +413,45 @@ class ConnectionHandler:
                     function_name = tools_call[0].function.name
                 if tools_call[0].function.arguments is not None:
                     function_arguments += tools_call[0].function.arguments
+            if not tool_call_flag and self.module_id != 0:
+                response_message = []
+                processed_chars = 0
+                text_index = 0
+                cwf_response = self.cwf.response("", self.dialogue.get_llm_dialogue_with_memory(memory_str))
+                for cwf_content, cwf_tools_call  in cwf_response:
+                    if cwf_content is not None and len(content) > 0:
+                        response_message.append(cwf_content)
+                        if self.client_abort:
+                            break
 
+                        end_time = time.time()
+                        self.logger.bind(tag=TAG).debug(
+                            f"大模型返回时间: {end_time - start_time} 秒, 生成token={cwf_content}")
+
+                        # 处理文本分段和TTS逻辑
+                        # 合并当前全部文本并处理未分割部分
+                        cwf_full_text = "".join(response_message)
+                        cwf_current_text = cwf_full_text[processed_chars:]  # 从未处理的位置开始
+
+                        # 查找最后一个有效标点
+                        punctuations = ("。", "？", "！", "；", "：")
+                        last_punct_pos = -1
+                        for punct in punctuations:
+                            pos = cwf_current_text.rfind(punct)
+                            if pos > last_punct_pos:
+                                last_punct_pos = pos
+
+                        # 找到分割点则处理
+                        if last_punct_pos != -1:
+                            segment_text_raw = cwf_current_text[:last_punct_pos + 1]
+                            segment_text = get_string_no_punctuation_or_emoji(segment_text_raw)
+                            if segment_text:
+                                text_index += 1
+                                self.recode_first_last_text(segment_text, text_index)
+                                future = self.executor.submit(self.speak_and_play, segment_text, text_index)
+                                self.tts_queue.put(future)
+                                processed_chars += len(segment_text_raw)  # 更新已处理字符位置
+                break
             if content is not None and len(content) > 0:
                 if tool_call_flag:
                     content_arguments += content
