@@ -46,6 +46,8 @@ class ConnectionHandler:
         self.session_id = None
         self.prompt = None
         self.welcome_msg = None
+        self.module_id = 0
+        self.cwf = None
 
         # 客户端状态相关
         self.client_abort = False
@@ -240,6 +242,11 @@ class ConnectionHandler:
             if m.role == "system":
                 m.content = prompt
 
+    def change_system_module(self, module_id):
+        from core.providers.llm.coze.coze_work_flow import LLMProvider as cwf
+        self.module_id = module_id
+        self.cwf = cwf(self.config["LLM"]["CozeLLM"])
+
     async def _check_and_broadcast_auth_code(self):
         """检查设备绑定状态并广播认证码"""
         if not self.private_config.get_owner():
@@ -367,11 +374,15 @@ class ConnectionHandler:
             # self.logger.bind(tag=TAG).info(f"对话记录: {self.dialogue.get_llm_dialogue_with_memory(memory_str)}")
 
             # 使用支持functions的streaming接口
+            mark_module_id = self.module_id
             llm_responses = self.llm.response_with_functions(
                 self.session_id,
                 self.dialogue.get_llm_dialogue_with_memory(memory_str),
                 functions=functions
             )
+            if self.module_id != 0:  # and self.module_id == mark_module_id:
+                llm_responses = self.cwf.response(self.dialogue.get_llm_dialogue_with_memory(memory_str))
+                pass
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"LLM 处理出错 {query}: {e}")
             return None
@@ -694,6 +705,7 @@ class ConnectionHandler:
             await ws.close()
         elif self.websocket:
             await self.websocket.close()
+        self.rest_module()
         self.logger.bind(tag=TAG).info("连接资源已释放")
 
     def _clear_queues(self):
@@ -717,6 +729,10 @@ class ConnectionHandler:
         self.client_voice_stop = False
         self.logger.bind(tag=TAG).debug("VAD states reset.")
 
+    def rest_module(self):
+        self.module_id = 0
+        self.cwf = None
+
     def chat_and_close(self, text):
         """Chat with the user and then close the connection"""
         try:
@@ -725,5 +741,6 @@ class ConnectionHandler:
 
             # After chat is complete, close the connection
             self.close_after_chat = True
+            self.rest_module()
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"Chat and close error: {str(e)}")

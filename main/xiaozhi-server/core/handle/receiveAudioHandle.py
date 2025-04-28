@@ -72,5 +72,6 @@ async def no_voice_close_connect(conn):
             conn.close_after_chat = True
             conn.client_abort = False
             conn.asr_server_receive = False
+            conn.rest_module()
             prompt = "请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧。"
             await startToChat(conn, prompt)
