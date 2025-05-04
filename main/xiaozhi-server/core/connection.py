@@ -351,6 +351,7 @@ class ConnectionHandler:
         return True
 
     def chat_with_function_calling(self, query, tool_call=False):
+        self.tts.set_voice("zn")
         self.logger.bind(tag=TAG).debug(f"Chat with function calling start: {query}")
         """Chat with function calling for intent detection using streaming"""
         if self.isNeedAuth():
@@ -418,8 +419,25 @@ class ConnectionHandler:
                 processed_chars = 0
                 text_index = 0
                 cwf_response = self.cwf.response("", self.dialogue.get_llm_dialogue_with_memory(memory_str))
-                for cwf_content, cwf_tools_call  in cwf_response:
+                tmp_des = ""
+                tmp_idx = -1
+                for cwf_content, cwf_tools_call in cwf_response:
                     if cwf_content is not None and len(content) > 0:
+                        if tmp_idx == -1 and self.module_id == 2:
+                            tmp_des += cwf_content
+                            if len(tmp_des) < 4:
+                                continue
+                            else:
+                                if tmp_des[0] == "$":
+                                    self.tts.set_voice(tmp_des[1:3])
+                                else:
+                                    self.tts.set_voice("zn")
+                                pass
+                            tmp_idx = 1
+                            if len(tmp_des)>4 and tmp_des[0] == "$":
+                                cwf_content = tmp_des[4:]
+                            if cwf_content=="":
+                                continue
                         response_message.append(cwf_content)
                         if self.client_abort:
                             break
@@ -769,6 +787,7 @@ class ConnectionHandler:
 
     def rest_module(self):
         self.module_id = 0
+        self.tts.set_voice("zn")
         self.cwf = None
 
     def chat_and_close(self, text):

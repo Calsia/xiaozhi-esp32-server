@@ -5,6 +5,15 @@ from datetime import datetime
 from core.providers.tts.base import TTSProviderBase
 
 
+lang_proj_string = {
+    "zn": "zh-CN-XiaoxiaoNeural",
+    "en": "en-US-JennyNeural",
+    "hk": "zh-HK-HiuGaaiNeural",
+    "ja": "ja-JP-NanamiNeural",
+    "ko": "ko-KR-SunHiNeural"
+}
+
+
 class TTSProvider(TTSProviderBase):
     def __init__(self, config, delete_audio_file):
         super().__init__(config, delete_audio_file)
@@ -25,3 +34,6 @@ class TTSProvider(TTSProviderBase):
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":  # 只处理音频数据块
                     f.write(chunk["data"])
+
+    def set_voice(self, voice_des):
+        self.voice = lang_proj_string[voice_des]
