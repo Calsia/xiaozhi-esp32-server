@@ -7,7 +7,7 @@
 server:
   # 服务器监听地址和端口(Server listening address and port)
   ip: 0.0.0.0
-  port: 8000
+  port: 18082
   # 认证配置
   auth:
     # 是否启用认证
@@ -46,9 +46,7 @@ xiaozhi:
     channels: 1
     frame_duration: 60
 prompt: |
-  你是一个叫小智/小志的台湾女孩，说话机车，声音好听，习惯简短表达，爱用网络梗。
-  请注意，要像一个人一样说话，请不要回复表情符号、代码、和xml标签。
-  现在我正在和你进行语音聊天，我们开始吧。
+  你是一个叫AI助手，有着心里辅导师、翻译官、普通聊天三种模式。
 
 # 使用完声音文件后删除文件(Delete the sound file when you are done using it)
 delete_audio: true
@@ -77,17 +75,18 @@ selected_module:
   # 语音识别模块，默认使用FunASR本地模型
   ASR: FunASR
   # 将根据配置名称对应的type调用实际的LLM适配器
-  LLM: ChatGLMLLM
+  LLM: ChatGLMLLM #  ChatGLMLLM, CozeLLM
   # TTS将根据配置名称对应的type调用实际的TTS适配器
-  TTS: EdgeTTS
+  TTS: EdgeTTS #   CozeCnTTS,   EdgeTTS
   # 记忆模块，默认不开启记忆；如果想使用超长记忆，推荐使用mem0ai；如果注重隐私，请使用本地的mem_local_short
   Memory: nomem
+
   # 意图识别模块开启后，可以播放音乐、控制音量、识别退出指令。
   # 不想开通意图识别，就设置成：nointent
   # 意图识别可使用intent_llm，如果你的LLM是DifyLLM或CozeLLM，建议使用这个。优点：通用性强，缺点：增加串行前置意图识别模块，会增加处理时间，这个意图识别暂时不支持控制音量大小等iot操作
   # 意图识别可使用function_call，缺点：需要所选择的LLM支持function_call，优点：按需调用工具、速度快，理论上能全部操作所有iot指令
   # 默认免费的ChatGLMLLM就已经支持function_call，但是如果像追求稳定建议把LLM设置成：DoubaoLLM，使用的具体model_name是：doubao-pro-32k-functioncall-241028
-  Intent: function_call
+  Intent: function_call #  function_call, intent_llm, nointent
 
 # 意图识别，是用于理解用户意图的模块，例如：播放音乐
 Intent:
@@ -110,6 +109,7 @@ Intent:
     # 下面是加载查天气、角色切换、加载查新闻的插件示例
     functions:
       - change_role
+      - change_module
       - get_weather
       - get_news
       # play_music是服务器自带的音乐播放，hass_play_music是通过home assistant控制的独立外部程序音乐播放
@@ -125,7 +125,7 @@ plugins:
   # 这个密钥是项目共用的key，用多了可能会被限制
   # 想稳定一点就自行申请替换，每天有1000次免费调用
   # 申请地址：https://console.qweather.com/#/apps/create-key/over
-  get_weather: { "api_key": "a861d0d5e7bf4ee1a83d9a9e4f96d4da", "default_location": "广州" }
+  get_weather: { "api_key": "7c51f0bd57ac49f8afbf6fb6bfe02f3e", "default_location": "北京" }
   # 获取新闻插件的配置，这里根据需要的新闻类型传入对应的url链接，默认支持社会、科技、财经新闻
   # 更多类型的新闻列表查看 https://www.chinanews.com.cn/rss/
   get_news:
@@ -195,8 +195,8 @@ LLM:
     api_key: 你的deepseek web key
     temperature: 0.7  # 温度值
     max_tokens: 500   # 最大生成token数
-    top_p: 1         
-    top_k: 50        
+    top_p: 1
+    top_k: 50
     frequency_penalty: 0  # 频率惩罚
   AliAppLLM:
     # 定义LLM API类型
@@ -205,7 +205,7 @@ LLM:
     app_id: 你的app_id
     # 可在这里找到你的 api_key https://bailian.console.aliyun.com/?apiKey=1#/api-key
     api_key: 你的api_key
-    # 是否不使用本地prompt：true|false (默不用请在百练应用中设置prompt) 
+    # 是否不使用本地prompt：true|false (默不用请在百练应用中设置prompt)
     is_no_prompt: true
     # Ali_memory_id：false（不使用）|你的memory_id（请在百练应用中设置中获取）
     # Tips！：Ali_memory未实现多用户存储记忆(记忆按id调用)
@@ -234,7 +234,7 @@ LLM:
     # 可在这里找到你的api key https://bigmodel.cn/usercenter/proj-mgmt/apikeys
     model_name: glm-4-flash
     url: https://open.bigmodel.cn/api/paas/v4/
-    api_key: 你的chat-glm web key
+    api_key: 6d87e86354ef42a9a277b3c6eda4407c.78A62B3pp9aNT24v
   OllamaLLM:
     # 定义LLM API类型
     type: ollama
@@ -265,9 +265,11 @@ LLM:
     # 定义LLM API类型
     type: coze
     # bot_id和user_id的内容写在引号之内
-    bot_id: "你的bot_id"
-    user_id: "你的user_id"
-    personal_access_token: 你的coze个人令牌
+    bot_id: "7486489889299677196"
+    user_id: "abc"####"你的user_id"
+    app_id: "7498295252122419239"
+    workflow_id: "7489080616107425818"
+    personal_access_token: "pat_gwv0CMVOaEOJugQBJLuLxc1rSmQcpgJZCMeHc4o1NtHmeSYWuCwSbNcNBalmwxEk"
   LMStudioLLM:
     # 定义LLM API类型
     type: openai
@@ -332,7 +334,7 @@ TTS:
     # token申请地址 https://www.coze.cn/open/oauth/pats
     voice: 7426720361733046281
     output_dir: tmp/
-    access_token: 你的coze web key
+    access_token: "pat_4wOOACRVwXr8V4R84zO8gi2a4DHAeIqwBw3nV8LHe5h438bqV9053T8ernXD7rh6"
     response_format: wav
   FishSpeech:
     # 定义TTS API类型
