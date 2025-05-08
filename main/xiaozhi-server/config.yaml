@@ -73,13 +73,14 @@ selected_module:
   # 语音活动检测模块，默认使用SileroVAD模型
   VAD: SileroVAD
   # 语音识别模块，默认使用FunASR本地模型
-  ASR: FunASR
+  ASR: FunASR #     SherpaWhisperASR， FunASR
   # 将根据配置名称对应的type调用实际的LLM适配器
   LLM: ChatGLMLLM #  ChatGLMLLM, CozeLLM
   # TTS将根据配置名称对应的type调用实际的TTS适配器
   TTS: EdgeTTS #   CozeCnTTS,   EdgeTTS
   # 记忆模块，默认不开启记忆；如果想使用超长记忆，推荐使用mem0ai；如果注重隐私，请使用本地的mem_local_short
   Memory: nomem
+
 
   # 意图识别模块开启后，可以播放音乐、控制音量、识别退出指令。
   # 不想开通意图识别，就设置成：nointent
@@ -177,6 +178,11 @@ ASR:
     access_token: 你的火山引擎语音合成服务access_token
     cluster: volcengine_input_common
     output_dir: tmp/
+  SherpaWhisperASR:
+    type: sherpa_onnx_whisper
+    model_dir: models/SherpaWhisper
+    output_dir: tmp/
+
 VAD:
   SileroVAD:
     threshold: 0.5
