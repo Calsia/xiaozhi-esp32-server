@@ -34,7 +34,7 @@ class TTSException(RuntimeError):
 
 
 class ConnectionHandler:
-    def __init__(self, config: Dict[str, Any], _vad, _asr, _llm, _tts, _memory, _intent):
+    def __init__(self, config: Dict[str, Any], _vad, base_asr, whisper_asr, _llm, _tts, _memory, _intent):
         self.config = config
         self.logger = setup_logging()
         self.auth = AuthMiddleware(config)
@@ -62,7 +62,9 @@ class ConnectionHandler:
 
         # 依赖的组件
         self.vad = _vad
-        self.asr = _asr
+        self.asr = base_asr
+        self.base_asr = base_asr
+        self.whisper_asr = whisper_asr
         self.llm = _llm
         self.tts = _tts
         self.memory = _memory
@@ -250,6 +252,8 @@ class ConnectionHandler:
             tt=self.cwf.response("", [{"role": "user", "content": module_info[2]}])
             for t in tt:
                 print(t)
+        if self.module_id == 2:
+            self.asr = self.whisper_asr
 
 
     async def _check_and_broadcast_auth_code(self):
@@ -788,6 +792,7 @@ class ConnectionHandler:
     def rest_module(self):
         self.module_id = 0
         self.tts.set_voice("zn")
+        self.asr = self.base_asr
         self.cwf = None
 
     def chat_and_close(self, text):

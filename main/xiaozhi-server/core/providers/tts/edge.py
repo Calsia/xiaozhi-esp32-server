@@ -10,7 +10,15 @@ lang_proj_string = {
     "en": "en-US-JennyNeural",
     "hk": "zh-HK-HiuGaaiNeural",
     "ja": "ja-JP-NanamiNeural",
-    "ko": "ko-KR-SunHiNeural"
+    "ko": "ko-KR-SunHiNeural",
+    "de": "de-AT-IngridNeural",
+    "ar": "ar-BH-AliNeural",
+    "es": "es-BO-SofiaNeural",
+    "fr": "fr-BE-CharlineNeural",
+    "vi": "vi-VN-HoaiMyNeural",
+    "pt": "pt-PT-RaquelNeural",
+    "it": "it-IT-ElsaNeural",
+    "th": "th-TH-PremwadeeNeural",
 }
 
 
