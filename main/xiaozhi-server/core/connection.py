@@ -52,6 +52,8 @@ class ConnectionHandler:
         # 客户端状态相关
         self.client_abort = False
         self.client_listen_mode = "auto"
+        self.continuous_recording = True  # 新增：是否处于连续录音模式
+        self.recording_file = None  # 新增：记录当前录音文件路径
 
         # 线程任务相关
         self.loop = asyncio.get_event_loop()
@@ -108,6 +110,33 @@ class ConnectionHandler:
         
         self.mcp_manager = MCPManager(self)
 
+    def start_continuous_recording(self, output_file):
+        """开始连续录音模式"""
+        self.continuous_recording = True
+        self.recording_file = output_file
+        self.logger.bind(tag=TAG).info(f"开始连续录音，保存到文件：{output_file}")
+
+    def stop_continuous_recording(self):
+        """停止连续录音模式"""
+        from core.providers.llm.coze.coze_work_flow import LLMProvider as cwf
+        this_cwf = cwf(self.config["LLM"]["CozeLLM"], "7513221650838519846")
+        this_cwf.response2(self.recording_file, "data/transcripts/response_recording.txt")
+
+        self.continuous_recording = False
+        self.recording_file = None
+        self.logger.bind(tag=TAG).info("停止连续录音")
+
+    def save_transcription_to_file(self, text):
+        """将转录文本保存到文件"""
+        if self.recording_file and text:
+            try:
+                with open(self.recording_file, 'a', encoding='utf-8') as f:
+                    timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    f.write(f"[{timestamp}] {text}\n")
+                self.logger.bind(tag=TAG).debug(f"已保存转录文本：{text}")
+            except Exception as e:
+                self.logger.bind(tag=TAG).error(f"保存转录文本失败：{e}")
+
     async def handle_connection(self, ws):
         try:
             # 获取并验证headers
@@ -126,6 +155,8 @@ class ConnectionHandler:
 
             self.welcome_msg = self.config["xiaozhi"]
             self.welcome_msg["session_id"] = self.session_id
+            # # 0605强制设定为recording
+            self.start_continuous_recording(f"data/transcripts/recording_{time.strftime('%Y%m%d_%H%M%S')}.txt")
             await self.websocket.send(json.dumps(self.welcome_msg))
             # Load private configuration if device_id is provided
             bUsePrivateConfig = self.config.get("use_private_config", False)
@@ -166,9 +197,11 @@ class ConnectionHandler:
 
             try:
                 async for message in self.websocket:
+                    # self.logger.bind(tag=TAG).info(f"收到原始消息：{message[:200]}{'...' if len(str(message)) > 200 else ''}")  # 限制打印长度，避免日志过长
                     await self._route_message(message)
             except websockets.exceptions.ConnectionClosed:
                 self.logger.bind(tag=TAG).info("客户端断开连接")
+                self.stop_continuous_recording()
 
         except AuthenticationError as e:
             self.logger.bind(tag=TAG).error(f"Authentication failed: {str(e)}")
@@ -184,6 +217,7 @@ class ConnectionHandler:
     async def _route_message(self, message):
         """消息路由"""
         if isinstance(message, str):
+            tmp = json.loads(message)
             await handleTextMessage(self, message)
         elif isinstance(message, bytes):
             await handleAudioMessage(self, message)

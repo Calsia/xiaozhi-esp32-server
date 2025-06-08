@@ -12,6 +12,7 @@ async def handleAudioMessage(conn, audio):
     if not conn.asr_server_receive:
         logger.bind(tag=TAG).debug(f"前期数据处理中，暂停接收")
         return
+
     if conn.client_listen_mode == "auto":
         have_voice = conn.vad.is_vad(conn, audio)
     else:
@@ -23,8 +24,10 @@ async def handleAudioMessage(conn, audio):
         conn.asr_audio.append(audio)
         conn.asr_audio = conn.asr_audio[-5:]  # 保留最新的5帧音频内容，解决ASR句首丢字问题
         return
+
     conn.client_no_voice_last_time = 0.0
     conn.asr_audio.append(audio)
+
     # 如果本段有声音，且已经停止了
     if conn.client_voice_stop:
         conn.client_abort = False
@@ -33,13 +36,21 @@ async def handleAudioMessage(conn, audio):
         if len(conn.asr_audio) < 10:
             conn.asr_server_receive = True
         else:
-            text, file_path = await conn.asr.speech_to_text(conn.asr_audio, conn.session_id)
-            logger.bind(tag=TAG).info(f"识别文本: {text}")
-            text_len, _ = remove_punctuation_and_length(text)
-            if text_len > 0:
-                await startToChat(conn, text)
-            else:
+            # 如果是连续录音模式，则在积累一定量的音频后就进行识别
+            if conn.continuous_recording:
+                text, file_path = await conn.asr.speech_to_text(conn.asr_audio, conn.session_id)
+                if text:
+                    logger.bind(tag=TAG).info(f"连续录音识别文本: {text} {file_path}")
+                    conn.save_transcription_to_file(text)
                 conn.asr_server_receive = True
+            else:
+                text, file_path = await conn.asr.speech_to_text(conn.asr_audio, conn.session_id)
+                logger.bind(tag=TAG).info(f"识别文本: {text}")
+                text_len, _ = remove_punctuation_and_length(text)
+                if text_len > 0:
+                    await startToChat(conn, text)
+                else:
+                    conn.asr_server_receive = True
         conn.asr_audio.clear()
         conn.reset_vad_states()
 
@@ -73,5 +84,5 @@ async def no_voice_close_connect(conn):
             conn.client_abort = False
             conn.asr_server_receive = False
             conn.rest_module()
-            prompt = "请你以“时间过得真快”未来头，用富有感情、依依不舍的话来结束这场对话吧。"
+            prompt = "请你以‘时间过得真快’未来头，用富有感情、依依不舍的话来结束这场对话吧。"
             await startToChat(conn, prompt)
