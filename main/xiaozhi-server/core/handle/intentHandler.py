@@ -17,7 +17,7 @@ async def handle_user_intent(conn, text):
     if await check_direct_exit(conn, text):
         return True
     # 检查是否是唤醒词
-    if True: # 0605不再检查、处理，因为本工程只想录音  await checkWakeupWords(conn, text):
+    if await checkWakeupWords(conn, text): # 0605不再检查、处理，因为本工程只想录音  await checkWakeupWords(conn, text):
         return True
 
     if conn.use_function_call_mode:
