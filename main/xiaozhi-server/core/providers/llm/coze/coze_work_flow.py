@@ -100,7 +100,7 @@ class LLMProvider(LLMProviderBase):
             
             # 使用工作流处理文本
             workflow_id = self.workflow_id
-            
+
             # 打开输出文件，准备写入结果
             with open(output_txt_path, 'w', encoding='utf-8') as out_file:
                 # 使用 bot_id 方式
@@ -111,12 +111,16 @@ class LLMProvider(LLMProviderBase):
                 ):
                     if event.event == WorkflowEventType.MESSAGE:
                         # 将结果写入文件
-                        out_file.write(event.message.content)
-                        out_file.flush()  # 确保内容立即写入文件
+
+                        content = event.message.content.replace("\\n", "\n")
+                        # content = bytes(event.message.content, 'utf-8').decode('unicode_escape')
+
+                        out_file.write(content)
+                        out_file.flush()
                     else:
                         logger.bind(tag=TAG).error(f"处理文本时出现错误: {event.error}")
                         return None
-                        
+
             return output_txt_path
                         
         except FileNotFoundError:

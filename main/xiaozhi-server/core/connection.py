@@ -13,6 +13,7 @@ from plugins_func.loadplugins import auto_import_modules
 from config.logger import setup_logging
 from core.utils.dialogue import Message, Dialogue
 from core.handle.textHandle import handleTextMessage
+from core.handle.sendmessagehandle import sendmessage2feishuhandle
 from core.utils.util import get_string_no_punctuation_or_emoji, extract_json_from_string, get_ip_info
 from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from core.handle.sendAudioHandle import sendAudioMessage
@@ -121,8 +122,8 @@ class ConnectionHandler:
         """停止连续录音模式"""
         from core.providers.llm.coze.coze_work_flow import LLMProvider as cwf
         this_cwf = cwf(self.config["LLM"]["CozeLLM"], "7513221650838519846")
-        this_cwf.response2(self.recording_file, "data/transcripts/response_recording.txt")
-
+        this_cwf.response2(self.recording_file, self.recording_file.replace(".txt", "_report.txt"))
+        sendmessage2feishuhandle(None, self.recording_file.replace(".txt", "_report.txt"))
         self.continuous_recording = False
         self.recording_file = None
         self.logger.bind(tag=TAG).info("停止连续录音")
