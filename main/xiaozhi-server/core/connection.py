@@ -114,6 +114,7 @@ class ConnectionHandler:
         """开始连续录音模式"""
         self.continuous_recording = True
         self.recording_file = output_file
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         self.logger.bind(tag=TAG).info(f"开始连续录音，保存到文件：{output_file}")
 
     def stop_continuous_recording(self):
