@@ -8,6 +8,14 @@ TAG = __name__
 logger = setup_logging()
 
 
+async def handleReportMessage(conn):
+    logger.bind(tag=TAG).info("Report message received")
+    # 关闭此次服务器
+    conn.stop_continuous_recording()
+    conn.close()
+    logger.bind(tag=TAG).info("Report message received-end")
+    logger.bind(tag=TAG).info("this connection is closed")
+
 def sendmessage2feishuhandle(conn, file_path):
     """
     从文本文件读取内容并发送到飞书

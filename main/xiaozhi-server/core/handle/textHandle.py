@@ -6,6 +6,8 @@ from core.utils.util import remove_punctuation_and_length
 from core.handle.receiveAudioHandle import startToChat, handleAudioMessage
 from core.handle.sendAudioHandle import send_stt_message, send_tts_message
 from core.handle.iotHandle import handleIotDescriptors, handleIotStatus
+from core.handle.sendmessagehandle import handleReportMessage
+
 
 TAG = __name__
 logger = setup_logging()
@@ -23,6 +25,8 @@ async def handleTextMessage(conn, message):
             await handleHelloMessage(conn)
         elif msg_json["type"] == "abort":
             await handleAbortMessage(conn)
+        elif msg_json["type"] == "report":
+            await handleReportMessage(conn)
         elif msg_json["type"] == "listen":
             if "mode" in msg_json:
                 conn.client_listen_mode = msg_json["mode"]

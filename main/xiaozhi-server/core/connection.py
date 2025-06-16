@@ -114,9 +114,9 @@ class ConnectionHandler:
     def start_continuous_recording(self, output_file):
         """开始连续录音模式"""
         self.continuous_recording = True
-        self.recording_file = output_file
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        self.logger.bind(tag=TAG).info(f"开始连续录音，保存到文件：{output_file}")
+        self.recording_file = "data/transcripts/recording_file.txt" #output_file if self.recording_file is None else self.recording_file
+        os.makedirs(os.path.dirname(self.recording_file), exist_ok=True)
+        self.logger.bind(tag=TAG).info(f"开始连续录音，保存到文件：{self.recording_file}")
 
     def stop_continuous_recording(self):
         """停止连续录音模式"""
@@ -124,6 +124,7 @@ class ConnectionHandler:
         this_cwf = cwf(self.config["LLM"]["CozeLLM"], "7513221650838519846")
         this_cwf.response2(self.recording_file, self.recording_file.replace(".txt", "_report.txt"))
         sendmessage2feishuhandle(None, self.recording_file.replace(".txt", "_report.txt"))
+        os.remove(self.recording_file)
         self.continuous_recording = False
         self.recording_file = None
         self.logger.bind(tag=TAG).info("停止连续录音")
@@ -203,7 +204,6 @@ class ConnectionHandler:
                     await self._route_message(message)
             except websockets.exceptions.ConnectionClosed:
                 self.logger.bind(tag=TAG).info("客户端断开连接")
-                self.stop_continuous_recording()
 
         except AuthenticationError as e:
             self.logger.bind(tag=TAG).error(f"Authentication failed: {str(e)}")
